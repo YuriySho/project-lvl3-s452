@@ -1,4 +1,5 @@
 RSS
+https://rss-project.now.sh
 
 ![Node CI](https://github.com/YuriySho/project-lvl3-s452/workflows/Node%20CI/badge.svg)
 
