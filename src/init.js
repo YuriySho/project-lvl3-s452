@@ -13,6 +13,7 @@ export default () => {
     jumbotron.append(discription);
     const input = document.createElement('input');
     input.setAttribute('type', 'text');
+    input.setAttribute('value', '');
     input.classList.add('form-control', 'form-control-lg');
     jumbotron.append(input);
     const pButton = document.createElement('p');

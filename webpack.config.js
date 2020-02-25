@@ -7,6 +7,11 @@ module.exports = {
       template: 'template.html',
     }),
   ],
+
+  watch: true,
+  watchOptions: {
+    aggregateTimeout: 100
+  },
   module: {
     rules: [
       {
