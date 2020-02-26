@@ -12,15 +12,16 @@ const buildItem = (state) => {
 };
 
 export default (state) => {
-    const body = document.querySelector('body');
-    const conteiner = document.createElement('div');
+    const row = document.querySelector('.row');
+    const col = document.createElement('div');
+    col.classList.add('col-sm-4', 'border', 'border-dark');
     const title = document.createElement('h1');
     title.textContent = state.content.title;
     const description = document.createElement('p');
     description.textContent = state.content.description;
     const resultItems = buildItem(state);
-    conteiner.append(title);
-    conteiner.append(description);
-    conteiner.append(resultItems.list);
-    body.append(conteiner);
+    col.append(title);
+    col.append(description);
+    col.append(resultItems.list);
+    row.append(col);
 };

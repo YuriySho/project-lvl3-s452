@@ -5,4 +5,5 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import watcher from './watcher';
 
 init();
+
 watcher();

@@ -21,6 +21,13 @@ export default () => {
             feedsList: [],
         }
     };
+    const body = document.querySelector('body');
+    const container = document.createElement('div');
+    container.classList.add('container');
+    const row = document.createElement('div');
+    row.classList.add('row');
+    container.append(row);
+    body.append(container);
     const inputUrl = document.querySelector('.form-control');
     const button = document.querySelector('.btn-primary');
     const corsUrl = 'https://cors-anywhere.herokuapp.com/';
@@ -55,7 +62,7 @@ export default () => {
                 button.classList.add('disabled');
                 break;
             case 'finished':
-                button.classList.add('disabled');
+                button.classList.remove('disabled');
                 render(state);
                 break;
             default:
