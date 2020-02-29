@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { string } from 'yup';
 
 export default (state, stringUrl) => {
-    if (_.includes(state.input.flows, stringUrl)) {
+    if (stringUrl === '' || _.includes(state.input.flows, stringUrl)) {
         state.isValid = false;
         state.error = 'URL is present in rss flow!';
         return;
