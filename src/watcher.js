@@ -21,8 +21,7 @@ export default () => {
         },
     };
     const point = document.getElementById('point');
-    const container = document.createElement('div');
-    container.classList.add('container');
+    const container = document.querySelector('.container');
     const row = document.createElement('div');
     row.classList.add('row');
     const colFeed = document.createElement('div');
@@ -31,7 +30,7 @@ export default () => {
     const colItem = document.createElement('div');
     colItem.classList.add('col-9');
     row.appendChild(colItem);
-    container.append(row);
+    container.appendChild(row);
     point.append(container);
     const inputUrl = document.querySelector('.form-control');
     const button = document.querySelector('.btn');
@@ -113,33 +112,31 @@ export default () => {
             })
     });
 
-    const updater = (state) => {
-        state.content.feedsList.forEach((el) => {
-            axios.get(`${corsUrl}${el.link}`)
-                .then((response) => {
-                    const domParser = new DOMParser();
-                    const xml = domParser.parseFromString(response.data, 'text/xml');
-                    return xml;
-                })
-                .then((xml) => {
-                    const data = parser(xml);
-                    data.itemsList.forEach((el) => {
-                        state.content.itemsList.forEach((item) => {
-                            if (el.linkItem !== item.link) {
-                                state.content.itemsList.push({ id: item.id, title: el.titleItem, link: el.linkItem});
-                            }
-                        });
+    const updater = () => {
+        const promises = state.content.feedsList.map((el) => axios.get(`${corsUrl}${el.link}`));
+        Promise.all(promises)
+            .then((response) => {
+                const domParser = new DOMParser();
+                response.map((el) => {
+                    const xml = domParser.parseFromString(el.data, 'text/xml');
+                    const { title, itemsList } = parser(xml);
+                    const currentFeed = state.content.feedsList.filter((el) => el.name === title);
+                    const newItems = [];
+                    itemsList.forEach((el) => {
+                        newItems.push({ id: currentFeed.id, title: el.titleItem, link: el.linkItem})
                     });
-
-                })
-                .catch((error) => {
-                    state.error = 'Network Problems. Try again!';
-                    return console.log(error);
-                })
-                .finally(() => setTimeout(updater, 5000, state));
-        });
+                    _.set(state, state.content.itemsList, newItems);
+                    console.log(newItems);
+                    console.log(state.content.itemsList);
+                });
+            })
+            .catch((error) => {
+                state.error = 'Network Problems. Try again!';
+                return console.log(error);
+            })
+            .finally(() => setTimeout(updater, 5000));
     };
-    setTimeout(updater, 5000, state);
+    setTimeout(updater, 5000);
 
     watch(state.content, 'itemsList', () => {
         render(state);
