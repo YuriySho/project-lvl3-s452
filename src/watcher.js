@@ -98,7 +98,7 @@ export default () => {
                 const data = parser(xml);
                 const newFeed = { id: _.uniqueId(), name: data.title, description: data.description, link: state.input.url };
                 data.itemsList.forEach((el) => {
-                    state.content.itemsList.push({ id: newFeed.id, title: el.titleItem, link: el.linkItem})
+                    state.content.itemsList.push({ id: newFeed.id, title: el.titleItem, link: el.linkItem, pubDate: el.pubDate })
                 });
                 state.content.feedsList.push(newFeed);
                 state.content.activeFeed = newFeed.id;
@@ -121,11 +121,12 @@ export default () => {
                     const xml = domParser.parseFromString(el.data, 'text/xml');
                     const { title, itemsList } = parser(xml);
                     const currentFeed = state.content.feedsList.filter((el) => el.name === title);
-                    const newItems = [];
-                    itemsList.forEach((el) => {
-                        newItems.push({ id: currentFeed.id, title: el.titleItem, link: el.linkItem})
-                    });
-                    _.set(state, state.content.itemsList, newItems);
+                    const currentItems = state.content.itemsList.filter((el) => el.id === currentFeed.id);
+                    const lastItem = _.max(currentItems.map(({ pubDate }) => pubDate));
+                    const newItems = itemsList.filter((el) => el.pubDate > lastItem);
+                    newItems.forEach((el) => {
+                        state.content.itemsList.push({ id: currentFeed.id, title: el.titleItem, link: el.linkItem, pubDate: el.pubDate });
+                    })
                     console.log(newItems);
                     console.log(state.content.itemsList);
                 });
@@ -134,9 +135,9 @@ export default () => {
                 state.error = 'Network Problems. Try again!';
                 return console.log(error);
             })
-            .finally(() => setTimeout(updater, 5000));
+            .finally(() => setTimeout(updater, 30000));
     };
-    setTimeout(updater, 5000);
+    setTimeout(updater, 30000);
 
     watch(state.content, 'itemsList', () => {
         render(state);
