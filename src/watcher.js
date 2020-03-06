@@ -120,15 +120,14 @@ export default () => {
                 response.map((el) => {
                     const xml = domParser.parseFromString(el.data, 'text/xml');
                     const { title, itemsList } = parser(xml);
-                    const currentFeed = state.content.feedsList.filter((el) => el.name === title);
+                    const currentFeed = state.content.feedsList.find((el) => el.name === title);
                     const currentItems = state.content.itemsList.filter((el) => el.id === currentFeed.id);
                     const lastItem = _.max(currentItems.map(({ pubDate }) => pubDate));
                     const newItems = itemsList.filter((el) => el.pubDate > lastItem);
+                    console.log(newItems)
                     newItems.forEach((el) => {
-                        state.content.itemsList.push({ id: currentFeed.id, title: el.titleItem, link: el.linkItem, pubDate: el.pubDate });
+                        state.content.itemsList = [{ id: currentFeed.id, title: el.titleItem, link: el.linkItem, pubDate: el.pubDate }, ...state.content.itemsList];
                     })
-                    console.log(newItems);
-                    console.log(state.content.itemsList);
                 });
             })
             .catch((error) => {
