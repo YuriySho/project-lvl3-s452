@@ -124,7 +124,6 @@ export default () => {
                     const currentItems = state.content.itemsList.filter((el) => el.id === currentFeed.id);
                     const lastItem = _.max(currentItems.map(({ pubDate }) => pubDate));
                     const newItems = itemsList.filter((el) => el.pubDate > lastItem);
-                    console.log(newItems)
                     newItems.forEach((el) => {
                         state.content.itemsList = [{ id: currentFeed.id, title: el.titleItem, link: el.linkItem, pubDate: el.pubDate }, ...state.content.itemsList];
                     })
@@ -134,9 +133,9 @@ export default () => {
                 state.error = 'Network Problems. Try again!';
                 return console.log(error);
             })
-            .finally(() => setTimeout(updater, 30000));
+            .finally(() => setTimeout(updater, 5000));
     };
-    setTimeout(updater, 30000);
+    setTimeout(updater, 5000);
 
     watch(state.content, 'itemsList', () => {
         render(state);
