@@ -1,9 +1,6 @@
-import init from './init';
+import app from './app';
 import 'bootstrap/js/dist/alert';
 import 'bootstrap/js/dist/util';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import watcher from './watcher';
 
-init();
-
-watcher();
+app();
