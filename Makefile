@@ -1,4 +1,5 @@
-install: install-deps install-flow-typed
+install:
+	install-deps
 
 develop:
 	npx webpack-dev-server
@@ -11,7 +12,7 @@ build:
 	NODE_ENV=production npx webpack
 
 lint:
-	npx eslint
+	npx eslint .
 
 publish:
 	npm publish
