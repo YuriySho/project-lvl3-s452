@@ -10,7 +10,7 @@ module.exports = {
 
   watch: true,
   watchOptions: {
-    aggregateTimeout: 100
+    aggregateTimeout: 100,
   },
   module: {
     rules: [
@@ -21,8 +21,8 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
-      }
+        use: ['style-loader', 'css-loader'],
+      },
     ],
   },
 };
