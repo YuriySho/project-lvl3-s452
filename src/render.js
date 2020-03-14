@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign */
+
 const render = (state) => {
   const containerForFeeds = document.createElement('div');
   const colFeed = document.querySelector('.col-3');
