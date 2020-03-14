@@ -8,13 +8,11 @@ import parser from './parser';
 import render from './render';
 
 export default () => {
-  i18next
-    .init({
-      lng: 'en',
-      debug: true,
-      resources,
-    })
-    .then((t) => { t(); });
+  const promise = i18next.init({
+    lng: 'en',
+    debug: true,
+    resources,
+  });
 
   const state = {
     input: {
@@ -48,12 +46,12 @@ export default () => {
   const validate = (value) => {
     if (value === '') {
       state.input.isValid = false;
-      state.error = i18next.t('empty');
+      promise.then((t) => { state.error = t('empty'); });
       return;
     }
     if (_.includes(state.input.flows, value)) {
       state.input.isValid = false;
-      state.error = i18next.t('dublicate');
+      promise.then((t) => { state.error = t('dublicate'); });
       return;
     }
     const schema = string().url();
@@ -61,7 +59,7 @@ export default () => {
       .then((data) => {
         if (!data) {
           state.input.isValid = false;
-          state.error = i18next.t('notValid');
+          promise.then((t) => { state.error = t('notValid'); });
         }
         if (data) {
           state.input.isValid = true;
@@ -145,7 +143,7 @@ export default () => {
       })
       .catch((error) => {
         state.input.process = 'filling';
-        state.error = i18next.t('network');
+        promise.then((t) => { state.error = t('network'); });
         throw error;
       });
   });
@@ -172,7 +170,7 @@ export default () => {
         });
       })
       .catch((error) => {
-        state.error = i18next.t('network');
+        promise.then((t) => { state.error = t('network'); });
         throw error;
       })
       .finally(() => setTimeout(updater, 5000));
