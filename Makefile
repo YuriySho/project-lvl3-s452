@@ -9,7 +9,7 @@ install-deps:
 
 build:
 	rm -rf dist
-	NODE_ENV=production npx webpack
+	NODE_ENV=development npx webpack
 
 lint:
 	npx eslint .

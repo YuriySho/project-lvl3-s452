@@ -1,33 +1,67 @@
+/* eslint-disable no-param-reassign */
+
 import i18next from 'i18next';
 import { watch } from 'melanke-watchjs';
 import _ from 'lodash';
 import { string } from 'yup';
 import axios from 'axios';
-import resources from './locales';
-import parser from './parser';
+import parse from './parser';
 import render from './render';
 
-export default () => {
-  const promise = i18next.init({
-    lng: 'en',
-    debug: true,
-    resources,
-  });
+const checkDublicate = (url, state) => !!state.feeds.find(({ link }) => link === url);
 
+const validate = (url) => {
+  let error = '';
+  const validateUrl = string().url().isValidSync(url);
+  if (!validateUrl) {
+    error = 'notValid';
+  }
+  if (validateUrl) {
+    error = '';
+  }
+  if (url === '') {
+    error = 'empty';
+  }
+  return error;
+};
+
+const updateState = (state) => {
+  const error = validate(state.input.url);
+  state.error = error;
+  if (checkDublicate(state.input.url, state)) {
+    state.error = 'dublicate';
+  }
+  state.input.isValid = _.isEqual(error, '');
+};
+
+export default () => {
   const state = {
     input: {
       url: '',
       isValid: false,
       process: 'filling',
-      flows: [],
     },
     error: '',
-    content: {
-      activeFeed: '',
-      feedsList: [],
-      itemsList: [],
-    },
+    activeFeed: '',
+    feeds: [],
+    itemsList: [],
   };
+
+  i18next.init({
+    lng: 'en',
+    debug: true,
+    resources: {
+      en: {
+        translation: {
+          network: 'Network Problems. Try again!',
+          dublicate: 'URL is present in rss flow!',
+          notValid: 'Value is not a valid url!',
+          empty: 'Input field should not to be empty',
+        },
+      },
+    },
+  });
+
   const container = document.querySelector('.container');
   const row = document.createElement('div');
   row.classList.add('row');
@@ -43,34 +77,9 @@ export default () => {
   const form = document.querySelector('.form-groups');
   const corsUrl = 'https://cors-anywhere.herokuapp.com/';
 
-  const validate = (value) => {
-    if (value === '') {
-      state.input.isValid = false;
-      promise.then((t) => { state.error = t('empty'); });
-      return;
-    }
-    if (_.includes(state.input.flows, value)) {
-      state.input.isValid = false;
-      promise.then((t) => { state.error = t('dublicate'); });
-      return;
-    }
-    const schema = string().url();
-    schema.isValid(value)
-      .then((data) => {
-        if (!data) {
-          state.input.isValid = false;
-          promise.then((t) => { state.error = t('notValid'); });
-        }
-        if (data) {
-          state.input.isValid = true;
-          state.error = '';
-          state.input.flows.push(value);
-        }
-      });
-  };
-
   inputUrl.addEventListener('input', (e) => {
-    validate(e.target.value);
+    state.input.url = e.target.value;
+    updateState(state);
   });
 
   watch(state, 'error', () => {
@@ -85,7 +94,7 @@ export default () => {
     }
     const feedbackElement = document.createElement('div');
     feedbackElement.classList.add('border');
-    feedbackElement.textContent = state.error;
+    feedbackElement.textContent = i18next.t(state.error);
     inputUrl.classList.add('border', 'border-danger');
     inputUrl.after(feedbackElement);
   });
@@ -121,7 +130,7 @@ export default () => {
     state.input.process = 'sending';
     axios.get(link)
       .then((response) => {
-        const data = parser(response.data);
+        const data = parse(response.data);
         const newFeed = {
           id: _.uniqueId(),
           name: data.title,
@@ -129,55 +138,54 @@ export default () => {
           link: state.input.url,
         };
         data.itemsList.forEach((el) => {
-          state.content.itemsList.push({
+          state.itemsList.push({
             id: newFeed.id,
             title: el.titleItem,
             link: el.linkItem,
             pubDate: el.pubDate,
           });
         });
-        state.content.feedsList.push(newFeed);
-        state.content.activeFeed = newFeed.id;
+        state.feeds.push(newFeed);
+        state.activeFeed = newFeed.id;
         state.input.process = 'finished';
-        form.reset();
       })
       .catch((error) => {
         state.input.process = 'filling';
-        promise.then((t) => { state.error = t('network'); });
+        state.error = 'network';
         throw error;
       });
   });
 
   const updater = () => {
-    const promises = state.content.feedsList.map((el) => axios.get(`${corsUrl}${el.link}`));
+    const promises = state.feeds.map((el) => axios.get(`${corsUrl}${el.link}`));
     Promise.all(promises)
       .then((response) => {
         response.map((el) => {
-          const { title, itemsList } = parser(el.data);
-          const currentFeed = state.content.feedsList.find((elem) => elem.name === title);
-          const currentItems = state.content.itemsList.filter((elem) => elem.id === currentFeed.id);
+          const { title, itemsList } = parse(el.data);
+          const currentFeed = state.feeds.find((elem) => elem.name === title);
+          const currentItems = state.itemsList.filter((elem) => elem.id === currentFeed.id);
           const lastItem = _.max(currentItems.map(({ pubDate }) => pubDate));
-          const newItems = itemsList.filter((elem) => elem.pubDate > lastItem);
-          newItems.forEach((elem) => {
-            state.content.itemsList = [{
+          const differenceBy = itemsList.filter((elem) => elem.pubDate > lastItem);
+          differenceBy.forEach((elem) => {
+            state.itemsList = [{
               id: currentFeed.id,
               title: elem.titleItem,
               link: elem.linkItem,
               pubDate: elem.pubDate,
-            }, ...state.content.itemsList];
+            }, ...state.itemsList];
           });
           return response;
         });
       })
       .catch((error) => {
-        promise.then((t) => { state.error = t('network'); });
+        state.error = 'network';
         throw error;
       })
       .finally(() => setTimeout(updater, 5000));
   };
   setTimeout(updater, 5000);
 
-  watch(state.content, 'itemsList', () => {
+  watch(state, 'itemsList', () => {
     render(state);
   });
 };

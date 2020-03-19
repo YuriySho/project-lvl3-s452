@@ -8,8 +8,6 @@ module.exports = {
     app: './src/app.js',
     parser: './src/parser.js',
     render: './src/render.js',
-    en: './src/locales/en.js',
-    index: './src/locales/index.js',
   },
   output: {
     filename: '[name].bundle.js',
@@ -20,7 +18,6 @@ module.exports = {
       template: 'template.html',
     }),
   ],
-
   watch: true,
   watchOptions: {
     aggregateTimeout: 100,
