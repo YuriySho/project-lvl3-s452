@@ -1,15 +1,11 @@
 install:
-	install-deps
+	npm install
 
 develop:
 	npx webpack-dev-server
 
-install-deps:
-	npm install
-
 build:
-	rm -rf dist
-	NODE_ENV=development npx webpack
+	npx webpack
 
 lint:
 	npx eslint .
