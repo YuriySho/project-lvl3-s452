@@ -18,7 +18,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: make install
-    - run: make build
+    - run: npm run build --if-present
     - name: Run linter
       run: |
         make lint
