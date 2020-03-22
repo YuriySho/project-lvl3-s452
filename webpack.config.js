@@ -19,6 +19,7 @@ module.exports = {
       fielname: 'template.html',
     }),
   ],
+  stats: { children: false },
   watch: true,
   watchOptions: {
     aggregateTimeout: 100,
