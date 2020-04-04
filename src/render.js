@@ -35,7 +35,7 @@ const render = (state) => {
   });
   colFeed.innerHTML = '';
   colFeed.appendChild(containerForFeeds);
-  const itemForRendering = state.itemsList
+  const itemForRendering = state.posts
     .filter(({ id }) => id === state.activeFeed);
   colItem.innerHTML = '';
   if (itemForRendering.length > 0) {
