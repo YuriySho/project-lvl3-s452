@@ -5,73 +5,49 @@ import { watch } from 'melanke-watchjs';
 import _ from 'lodash';
 import { string } from 'yup';
 import axios from 'axios';
+import resources from './locales';
 import parse from './parser';
 import render from './render';
 
-const checkDublicate = (url, state) => !!state.feeds.find(({ link }) => link === url);
-
 const validate = (url) => {
   let error = '';
-  const validateUrl = string().url().isValidSync(url);
-  if (!validateUrl) {
-    error = 'notValid';
-  }
-  if (validateUrl) {
+  const validateUrl = string()
+    .min(1, 'empty')
+    .url('notValid');
+  try {
+    validateUrl.validateSync(url);
     error = '';
-  }
-  if (url === '') {
-    error = 'empty';
+  } catch (err) {
+    error = err.message;
   }
   return error;
 };
 
-const updateState = (state) => {
+const updateValidationState = (state) => {
   const error = validate(state.input.url);
-  state.error = error;
-  if (checkDublicate(state.input.url, state)) {
-    state.error = 'dublicate';
-  }
+  state.input.error = error;
   state.input.isValid = _.isEqual(error, '');
 };
 
 export default () => {
   const state = {
     input: {
+      error: '',
       url: '',
       isValid: false,
       process: 'filling',
     },
-    error: '',
     activeFeed: '',
     feeds: [],
-    itemsList: [],
+    posts: [],
   };
 
   i18next.init({
     lng: 'en',
     debug: true,
-    resources: {
-      en: {
-        translation: {
-          network: 'Network Problems. Try again!',
-          dublicate: 'URL is present in rss flow!',
-          notValid: 'Value is not a valid url!',
-          empty: 'Input field should not to be empty',
-        },
-      },
-    },
+    resources,
   });
 
-  const container = document.querySelector('.container');
-  const row = document.createElement('div');
-  row.classList.add('row');
-  const colFeed = document.createElement('div');
-  colFeed.classList.add('col-3');
-  row.appendChild(colFeed);
-  const colItem = document.createElement('div');
-  colItem.classList.add('col-9');
-  row.appendChild(colItem);
-  container.appendChild(row);
   const inputUrl = document.querySelector('.form-control');
   const button = document.querySelector('.btn');
   const form = document.querySelector('.form-groups');
@@ -79,22 +55,22 @@ export default () => {
 
   inputUrl.addEventListener('input', (e) => {
     state.input.url = e.target.value;
-    updateState(state);
+    updateValidationState(state);
   });
 
-  watch(state, 'error', () => {
+  watch(state.input, 'error', () => {
     const errorElement = inputUrl.nextElementSibling;
     const invalidClass = document.querySelector('.border');
     if (invalidClass) {
       inputUrl.classList.remove('border', 'border-danger');
       errorElement.remove();
     }
-    if (state.error === '') {
+    if (state.input.error === '') {
       return;
     }
     const feedbackElement = document.createElement('div');
     feedbackElement.classList.add('border');
-    feedbackElement.textContent = i18next.t(state.error);
+    feedbackElement.textContent = i18next.t(state.input.error);
     inputUrl.classList.add('border', 'border-danger');
     inputUrl.after(feedbackElement);
   });
@@ -126,6 +102,12 @@ export default () => {
     const formData = new FormData(e.target);
     const value = formData.get('url');
     state.input.url = value;
+    const wasAddedBefore = !!state.feeds.find(({ link }) => link === state.input.url);
+    if (wasAddedBefore) {
+      state.input.error = 'dublicate';
+      state.input.isValid = false;
+      return;
+    }
     const link = `${corsUrl}${state.input.url}`;
     state.input.process = 'sending';
     axios.get(link)
@@ -133,15 +115,15 @@ export default () => {
         const data = parse(response.data);
         const newFeed = {
           id: _.uniqueId(),
-          name: data.title,
+          name: data.titleFeed,
           description: data.description,
           link: state.input.url,
         };
-        data.itemsList.forEach((el) => {
-          state.itemsList.push({
+        data.posts.forEach((el) => {
+          state.posts.push({
             id: newFeed.id,
-            title: el.titleItem,
-            link: el.linkItem,
+            title: el.title,
+            link: el.link,
             pubDate: el.pubDate,
           });
         });
@@ -151,7 +133,7 @@ export default () => {
       })
       .catch((error) => {
         state.input.process = 'filling';
-        state.error = 'network';
+        state.input.error = 'network';
         throw error;
       });
   });
@@ -161,31 +143,31 @@ export default () => {
     Promise.all(promises)
       .then((response) => {
         response.map((el) => {
-          const { title, itemsList } = parse(el.data);
-          const currentFeed = state.feeds.find((elem) => elem.name === title);
-          const currentItems = state.itemsList.filter((elem) => elem.id === currentFeed.id);
+          const { titleFeed, posts } = parse(el.data);
+          const currentFeed = state.feeds.find((elem) => elem.name === titleFeed);
+          const currentItems = state.posts.filter((elem) => elem.id === currentFeed.id);
           const lastItem = _.max(currentItems.map(({ pubDate }) => pubDate));
-          const differenceBy = itemsList.filter((elem) => elem.pubDate > lastItem);
+          const differenceBy = posts.filter((elem) => elem.pubDate > lastItem);
           differenceBy.forEach((elem) => {
-            state.itemsList = [{
+            state.posts = [{
               id: currentFeed.id,
-              title: elem.titleItem,
-              link: elem.linkItem,
+              title: elem.title,
+              link: elem.link,
               pubDate: elem.pubDate,
-            }, ...state.itemsList];
+            }, ...state.posts];
           });
           return response;
         });
       })
       .catch((error) => {
-        state.error = 'network';
+        state.input.error = 'network';
         throw error;
       })
       .finally(() => setTimeout(updater, 5000));
   };
   setTimeout(updater, 5000);
 
-  watch(state, 'itemsList', () => {
+  watch(state, 'posts', () => {
     render(state);
   });
 };
