@@ -9,14 +9,15 @@ import resources from './locales';
 import parse from './parser';
 import render from './render';
 
-const validate = (url) => {
-  let error = '';
+const validate = (url, wasAddedBefore) => {
+  let error = null;
   const validateUrl = string()
     .min(1, 'empty')
-    .url('notValid');
+    .url('notValid')
+    .notOneOf(wasAddedBefore, 'duplicate');
   try {
     validateUrl.validateSync(url);
-    error = '';
+    error = null;
   } catch (err) {
     error = err.message;
   }
@@ -24,20 +25,21 @@ const validate = (url) => {
 };
 
 const updateValidationState = (state) => {
-  const error = validate(state.input.url);
+  const wasAddedBefore = state.feeds.map((feed) => feed.link);
+  const error = validate(state.input.url, wasAddedBefore);
   state.input.error = error;
-  state.input.isValid = _.isEqual(error, '');
+  state.input.isValid = error === null;
 };
 
 export default () => {
   const state = {
     input: {
-      error: '',
-      url: '',
+      error: null,
+      url: null,
       isValid: false,
       process: 'filling',
     },
-    activeFeed: '',
+    activeFeed: null,
     feeds: [],
     posts: [],
   };
@@ -65,7 +67,7 @@ export default () => {
       inputUrl.classList.remove('border', 'border-danger');
       errorElement.remove();
     }
-    if (state.input.error === '') {
+    if (state.input.error === null) {
       return;
     }
     const feedbackElement = document.createElement('div');
@@ -79,13 +81,13 @@ export default () => {
     const { process } = state.input;
     switch (process) {
       case 'filling':
-        button.disabled = 'false';
+        button.disabled = false;
         break;
       case 'sending':
-        button.disabled = 'true';
+        button.disabled = true;
         break;
       case 'finished':
-        button.disabled = 'true';
+        button.disabled = true;
         render(state);
         break;
       default:
@@ -102,12 +104,6 @@ export default () => {
     const formData = new FormData(e.target);
     const value = formData.get('url');
     state.input.url = value;
-    const wasAddedBefore = !!state.feeds.find(({ link }) => link === state.input.url);
-    if (wasAddedBefore) {
-      state.input.error = 'dublicate';
-      state.input.isValid = false;
-      return;
-    }
     const link = `${corsUrl}${state.input.url}`;
     state.input.process = 'sending';
     axios.get(link)
@@ -133,7 +129,7 @@ export default () => {
       })
       .catch((error) => {
         state.input.process = 'filling';
-        state.input.error = 'network';
+        state.input.error = error.response.status;
         throw error;
       });
   });
