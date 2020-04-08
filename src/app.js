@@ -156,7 +156,7 @@ export default () => {
         });
       })
       .catch((error) => {
-        state.input.error = 'network';
+        state.input.error = error.response.status;
         throw error;
       })
       .finally(() => setTimeout(updater, 5000));
