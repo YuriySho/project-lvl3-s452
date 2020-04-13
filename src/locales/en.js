@@ -1,9 +1,9 @@
 export default {
   translation: {
-    400: 'Bad Request',
-    404: 'Not Found',
+    400: 'Request failed with status code 400',
+    404: 'Request failed with status code 404',
     408: 'Request Timeout',
-    410: 'Contetn is gone',
+    410: 'Content is gone',
     500: 'Interval Server Error',
     502: 'Bad Gateway',
     503: 'Server Unavailable',
