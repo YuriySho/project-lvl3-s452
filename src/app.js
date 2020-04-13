@@ -9,24 +9,24 @@ import resources from './locales';
 import parse from './parser';
 import render from './render';
 
-const validate = (url, wasAddedBefore) => {
-  let error = null;
+const validate = (url, currentLinks) => {
   const validateUrl = string()
     .min(1, 'empty')
     .url('notValid')
-    .notOneOf(wasAddedBefore, 'duplicate');
+    .notOneOf(currentLinks, 'duplicate');
   try {
     validateUrl.validateSync(url);
-    error = null;
+    const error = null;
+    return error;
   } catch (err) {
-    error = err.message;
+    const error = err.message;
+    return error;
   }
-  return error;
 };
 
 const updateValidationState = (state) => {
-  const wasAddedBefore = state.feeds.map((feed) => feed.link);
-  const error = validate(state.input.url, wasAddedBefore);
+  const currentLinks = state.feeds.map((feed) => feed.link);
+  const error = validate(state.input.url, currentLinks);
   state.input.error = error;
   state.input.isValid = error === null;
 };
